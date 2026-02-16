@@ -1,4 +1,4 @@
-import os
+Import os
 import sys
 import subprocess
 import threading
@@ -8,20 +8,16 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, render_template_string
 from flask_socketio import SocketIO
 
-# রেন্ডার বা ক্লাউড হোস্টিংয়ের জন্য বাফারিং বন্ধ করা
-os.environ['PYTHONUNBUFFERED'] = '1'
-
 app = Flask(__name__)
 # সেশন সিকিউরিটির জন্য সিক্রেট কি
 app.secret_key = "bot_secret_access_key_2026_99" 
-# রেন্ডারে রিয়েল-টাইম লগের জন্য async_mode threading বা eventlet ব্যবহার করা হয়
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ইউজার সেশন ডাটা স্টোর করার জন্য ডিকশনারি
 user_sessions = {} 
 ADMIN_CONFIG = "admin_config.txt"
 
-# --- লগইন পেইজের ডিজাইন ---
+# --- লগইন পেইজের ডিজাইন (ছবির মত হুবহু লুক) ---
 LOGIN_HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -97,11 +93,9 @@ def get_config():
         with open(ADMIN_CONFIG, 'r') as f:
             for line in f:
                 if '=' in line:
-                    parts = line.strip().split('=')
-                    if len(parts) == 2:
-                        key, val = parts
-                        if key == 'admin_password': conf['pass'] = val
-                        if key == 'global_duration': conf['duration'] = int(val)
+                    key, val = line.strip().split('=')
+                    if key == 'admin_password': conf['pass'] = val
+                    if key == 'global_duration': conf['duration'] = int(val)
     return conf
 
 # অ্যাডমিন কনফিগারেশন সেভ করা
@@ -135,7 +129,6 @@ threading.Thread(target=expiry_monitor, daemon=True).start()
 
 def stream_logs(proc, name):
     try:
-        # রিয়েল-টাইম লগের জন্য iter এবং readline ব্যবহার
         for line in iter(proc.stdout.readline, ''):
             if line:
                 socketio.emit('new_log', {'data': line.strip(), 'user': name})
@@ -156,6 +149,7 @@ def login_auth():
     data = request.json
     u = data.get('username')
     p = data.get('password')
+    # ছবিতে দেখানো ডিফল্ট পাসওয়ার্ড অনুযায়ী চেক
     if u == "admin" and p == "changeme123":
         session['logged_in'] = True
         return jsonify({"status": "success"})
@@ -170,6 +164,8 @@ def index():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+# --- বটের মূল কন্ট্রোল এপিআই ---
 
 @app.route('/api/check_status', methods=['POST'])
 @login_required
@@ -196,35 +192,21 @@ def bot_control():
             return jsonify({"status": "error", "message": "ALREADY RUNNING!"})
         try:
             with open("bot.txt", "w") as f: f.write(f"uid={uid}\npassword={pw}")
-            
-            # সংশোধনী: sys.executable এর সাথে '-u' ফ্লাগ যুক্ত করা হয়েছে যেন লগ সাথে সাথে আসে
-            proc = subprocess.Popen(
-                [sys.executable, '-u', 'main.py'], 
-                stdout=subprocess.PIPE, 
-                stderr=subprocess.STDOUT, 
-                text=True, 
-                bufsize=1, 
-                universal_newlines=True
-            )
-            
+            proc = subprocess.Popen([sys.executable, 'main.py'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, universal_newlines=True)
             end_time = "unlimited" if conf['duration'] == -1 else datetime.now() + timedelta(minutes=conf['duration'])
             user_sessions[name] = {'proc': proc, 'end_time': end_time, 'running': True}
-            
             threading.Thread(target=stream_logs, args=(proc, name), daemon=True).start()
-            
-            rem_sec = (conf['duration'] * 60 if conf['duration'] != -1 else -1)
-            return jsonify({"status": "success", "running": True, "rem_sec": rem_sec})
-        except Exception as e: 
-            return jsonify({"status": "error", "message": str(e)})
+            return jsonify({"status": "success", "running": True, "rem_sec": (conf['duration']*60 if conf['duration'] != -1 else -1)})
+        except Exception as e: return jsonify({"status": "error", "message": str(e)})
 
     elif action == 'stop':
         if name in user_sessions and user_sessions[name]['running']:
-            if user_sessions[name]['proc']: 
-                user_sessions[name]['proc'].terminate()
+            if user_sessions[name]['proc']: user_sessions[name]['proc'].terminate()
             user_sessions[name]['running'] = False
             return jsonify({"status": "success", "running": False})
     return jsonify({"status": "error", "message": "FAILED"})
 
+# অ্যাডমিন ও প্রক্সি এপিআই আগের মতই রয়েছে...
 @app.route('/api/admin', methods=['POST'])
 @login_required
 def admin_api():
@@ -233,11 +215,7 @@ def admin_api():
     if data.get('password') != conf['pass']: return jsonify({"status": "error", "message": "Wrong Passkey!"})
     action = data.get('action')
     if action == 'login':
-        active_users = []
-        for n, i in user_sessions.items():
-            if i['running']:
-                rem_m = -1 if i['end_time'] == "unlimited" else max(0, int((i['end_time'] - datetime.now()).total_seconds() / 60))
-                active_users.append({"name": n, "rem_min": rem_m})
+        active_users = [{"name": n, "rem_min": (-1 if i['end_time'] == "unlimited" else max(0, int((i['end_time'] - datetime.now()).total_seconds() / 60)))} for n, i in user_sessions.items() if i['running']]
         return jsonify({"status": "success", "duration": conf['duration'], "users": active_users})
     elif action == 'save_global':
         save_config(conf['pass'], int(data.get('duration', 120)))
@@ -260,8 +238,9 @@ def proxy_guild():
         return jsonify(resp.json())
     except: return jsonify({"error": "API Error"})
 
+import os
+
 if __name__ == '__main__':
-    # Render-এ পোর্ট এনভায়রনমেন্ট ভেরিয়েবল থেকে নিতে হয়
+    # Render
     port = int(os.environ.get("PORT", 10000))
-    # Render-এ রিয়েল-টাইম লগের জন্য host '0.0.0.0' হওয়া বাধ্যতামূলক
     socketio.run(app, host='0.0.0.0', port=port)
