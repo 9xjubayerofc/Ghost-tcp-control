@@ -238,5 +238,12 @@ def proxy_guild():
         return jsonify(resp.json())
     except: return jsonify({"error": "API Error"})
 
+import os
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5006, host='0.0.0.0')
+    # Render
+    port = int(os.environ.get('PORT', 10000))
+    
+    # debug=True
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+
