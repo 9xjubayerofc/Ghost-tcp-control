@@ -1,17 +1,55 @@
-# ======================== IMPORTS =======================
-import requests , os , psutil , sys , jwt , pickle , json , binascii , time , urllib3 , base64 , datetime , re , socket , threading , ssl , pytz , aiohttp , traceback , signal , multiprocessing , asyncio
-from Pb2 import DEcwHisPErMsG_pb2 , MajoRLoGinrEs_pb2 , PorTs_pb2 , MajoRLoGinrEq_pb2 , sQ_pb2 , Team_msg_pb2, RemoveFriend_Req_pb2, GetFriend_Res_pb2, spam_request_pb2, devxt_count_pb2, dev_generator_pb2, kyro_title_pb2, room_join_pb2
-from protobuf_decoder.protobuf_decoder import Parser
-from xC4 import * ; from xHeaders import *
+import requests, os, psutil, sys, jwt, pickle, json, binascii, time, urllib3, base64, re, socket, threading, ssl, pytz, aiohttp, traceback, signal, multiprocessing, asyncio
+import random
 from datetime import datetime
-from google.protobuf.timestamp_pb2 import Timestamp
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
+
+# Third-party imports
 from cfonts import render, say
-import google.protobuf.json_format as json_format
-import random
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+import google.protobuf.json_format as json_format
+from google.protobuf.timestamp_pb2 import Timestamp
+from protobuf_decoder.protobuf_decoder import Parser
+
+# Local/Custom imports
+from Pb2 import (
+    DEcwHisPErMsG_pb2, MajoRLoGinrEs_pb2, PorTs_pb2, MajoRLoGinrEq_pb2, 
+    sQ_pb2, Team_msg_pb2, RemoveFriend_Req_pb2, GetFriend_Res_pb2, 
+    spam_request_pb2, devxt_count_pb2, dev_generator_pb2, kyro_title_pb2, room_join_pb2
+)
+from xC4 import *
+from xHeaders import *
+
+# --- সমাধান অংশ শুরু ---
+
+def main():
+    """
+    আপনার বটের মূল কাজগুলো (যেমন Manager তৈরি করা বা বট স্টার্ট করা) 
+    সব এই ফাংশনের ভেতরে রাখুন।
+    """
+    try:
+        # উদাহরণস্বরূপ:
+        # manager = multiprocessing.Manager()
+        # bot.run()
+        print("Jubayer-V2 Bot is starting safely...")
+        
+        # আপনার বাকি কোড এখানে পেস্ট করুন...
+        
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    # Render বা ক্লাউড সার্ভারে মাল্টিপ্রসেসিং এরর ঠিক করার আসল চাবিকাঠি এটি
+    if sys.platform == 'linux':
+        try:
+            multiprocessing.set_start_method('fork')
+        except RuntimeError:
+            pass
+            
+    main()
+
 
 # =================== CONFIGURATION ======================
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  
