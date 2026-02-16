@@ -60,7 +60,7 @@ LOGIN_HTML = """
         <button class="login-btn" onclick="doLogin()">➜ LOGIN</button>
         <div class="info-footer">
             <span>ⓘ Default: admin / changeme123</span>
-            Change after login!
+            Developer @jubayer_ahmed_34 !
         </div>
     </div>
     <script>
