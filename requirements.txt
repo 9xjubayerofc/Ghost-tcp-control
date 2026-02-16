@@ -13,3 +13,4 @@ pytz
 aiohttp
 cfonts
 flask-socketio
+eventlet
